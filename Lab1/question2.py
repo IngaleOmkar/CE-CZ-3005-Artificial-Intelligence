@@ -3,11 +3,12 @@
 import queue
 
 
-class question_one:
-    def __init__(self, coord, dist, g):
-        print("======================== QUESTION 1 ========================\n")
+class question_two:
+    def __init__(self, coord, cost, dist, g):
+        print("======================== QUESTION 2 ========================\n")
         self.priority_queue = queue.PriorityQueue()
         self.coord = coord
+        self.cost = cost
         self.dist = dist
         self.g = g
 
@@ -35,7 +36,7 @@ class question_one:
         return route
 
     # Uniform-Cost-Search (UCS) with Priority Queue
-    def uniform_cost_search(self, start, goal):
+    def uniform_cost_search(self, start, goal, budget):
         ''' Function to perform UCS to find path in a graph
             Input  : Graph with the start and goal vertices
             Output : Dict of explored vertices in the graph
@@ -46,43 +47,48 @@ class question_one:
         goal = str(goal)
 
         # Dict of explored nodes {node : parentNode}, start node has no parent node
-        explored = {start: None}
-        # Dict of cost from start to node, start cost is zero
-        pathcost = {start: 0}
+        explored = {(0, start): None}
+        # Dict of distance cost from start to node, start cost is zero
+        path_distance = {start: 0}
+        # Dict of energy cost
+        path_energy = {start: 0}
         # Priority Queue for Frontier
         frontier = self.priority_queue
         # Add the start node to frontier
-        frontier.put((0, start))
-        
+        frontier.put((0, (0, start)))
+
         while not frontier.empty():
             # Get next node from frontier
-            distance, currentNode = frontier.get()
+            distance, (energy_cost, currentNode) = frontier.get()
             currentNode = str(currentNode)
 
             # Stop when goal is reached
             if currentNode == str(goal):
                 route = self.reconstruct_path(explored, start, goal)
-                return distance, route
+                return distance, energy_cost, route
 
             # Explore every single neighbor of current node
             for nextNode in self.g[currentNode]:
                 nextNode = str(nextNode)
+
                 # compute the new cost for the node based on the current node
-                newcost = distance + self.dist[currentNode + "," + nextNode]
+                newDistance = distance + self.dist[currentNode + "," + nextNode]
+                newCost = energy_cost + self.cost[currentNode + "," + nextNode]
+                
+                # consider if not yet explored or if the new distance is lower
+                if ((nextNode not in explored) or (newDistance <= path_distance[nextNode])) and (newCost <= budget):
 
-                # consider if not yet explored or if the new cost is lower
-                if (nextNode not in explored) or (newcost < pathcost[nextNode]):
-
-                    # set priority as newcost
-                    priority = newcost
+                    # set priority as newDistance
+                    priority = newDistance
 
                     # put new node in frontier with priority
-                    frontier.put((priority, nextNode))
+                    frontier.put((priority, (newCost, nextNode)))
 
                     # assign current node as parent
                     explored[nextNode] = currentNode
 
                     # keep track of the updated path cost
-                    pathcost[nextNode] = newcost
+                    path_distance[nextNode] = newDistance
+                    path_energy[nextNode] = newCost
 
-        return None, None
+        return None, None, None

@@ -2,7 +2,7 @@ import json
 from binary_heap import Heap # Our custom Minimizing Heap class
 
 
-def task_one(source: str, target: str, coord, dist, g):
+def task_one(source: str, target: str, coord, dist, g, cost):
     """Task one solves a relaxed version of the NYC instance (no energy constraint).
     
     Required Data
@@ -13,14 +13,17 @@ def task_one(source: str, target: str, coord, dist, g):
     target
         Goal state, and the vertex we are trying to find the shortest distance to, from the source vertex.
 
-    coord.json
-        To find the children of a node that is being visited.
+    coord
+        JSON file, to find the children of a node that is being visited.
     
-    dist.json
-        To measure direct distances between connected nodes.
+    dist
+        JSON file, to measure direct distances between connected nodes.
 
-    g.json
-        To get the total number of nodes.
+    g
+        JSON file, to get the total number of nodes.
+
+    cost
+        JSON file, to measure the energy cost of travelling between connected nodes.
     """
 
     # We will find shortest path using the Uniform-Cost Search (UCS) Algorithm
@@ -36,13 +39,17 @@ def task_one(source: str, target: str, coord, dist, g):
     # Initialize all distances to infinity
     distances = [9223372036854775807] * (num_nodes + 1)  # 1-indexed => total distance from the source node, to the node at the index
 
+    # Initialize all energy costs to infinity
+    costs = [9223372036854775807] * (num_nodes + 1)
+
     # Initialize the priority queue
     priority_queue = Heap()
 
-    # Push the source node into the heap, mark distance as 0, and mark it as visited -> O(1)
+    # Push the source node into the heap, mark distance and cost as 0, and mark it as visited -> O(1)
     s = int(source)
     priority_queue.insert(s, 0)
     distances[s] = 0
+    costs[s] = 0
     visited[s] = True
     parent[s] = s
 
@@ -71,6 +78,8 @@ def task_one(source: str, target: str, coord, dist, g):
                 visited[int_child] = True                           # Mark this child as visited
                 distances[int_child] = distance_to_child            # Save the new distance from the source to this child  
                 parent[int_child] = current_node                    # Set the parent of this child as the current_node variable being explored
+                # Calculate the total energy cost to the child, and set the child's cost to it
+                costs[int_child] = costs[current_node] + cost[str(current_node) + "," + child]
 
     # We are out of the while loop => All shortest distances have been calculated from the source to target node
     # We need to reconstruct the path and print it out, along with the shortest distance from source to target
@@ -83,21 +92,123 @@ def task_one(source: str, target: str, coord, dist, g):
         start = parent[start]
     path.append(start)
 
-    print("Number of nodes in shortest path (including source and target):", len(path))
-    '''
+    # print("Number of nodes in shortest path (including source and target):", len(path))
+    print("Shortest path: ", end="")
     for node in reversed(path):
         if (node != int(target)):
             print(str(node), end="->")
         else:
             print(node)
-    '''
-    print("Shortest distance found:", distances[int(target)])
+    print("Shortest distance:", distances[int(target)])
+    print("Total energy cost:", costs[int(target)])
 
 
-def task_two():
-    """Task one solves the NYC problem instance with the energy constraint included."""
+def task_two(source: str, target: str, coord, dist, g, cost, energy_budget: int):
+    """Task one solves a relaxed version of the NYC instance (no energy constraint).
     
-    print("Task 2")
+    Required Data
+    -------------
+    source : str
+        Starting vertex.
+    
+    target : str
+        Goal state, and the vertex we are trying to find the shortest distance to, from the source vertex.
+
+    coord
+        JSON file, to find the children of a node that is being visited.
+    
+    dist
+        JSON file, to measure direct distances between connected nodes.
+
+    g
+        JSON file, to get the total number of nodes.
+
+    cost
+        JSON file, to measure the energy cost of travelling between connected nodes.
+
+    energy_budget : int
+        Maximum permissible energy that we are allowed to use to travel from the source node to target node. Used as the constraint in this problem to adhere to, while finding the minimum distance possible.
+    """
+
+    # We will find shortest path using the Uniform-Cost Search (UCS) Algorithm
+    # UCS is very effective for graphs which are very large
+    #* Note that UCS will consider path costs in making its decision, compared to BFS which must go through each level iteratively
+    num_nodes = len(g.keys()) # 264346
+    # Initialize the visited array, which tracks the visited status of the node, and its parent respectively
+    visited = [False] * (num_nodes + 1) # 1-indexed
+
+    # Initialize the parent array, that holds the parent node of a visited node
+    parent = [-1] * (num_nodes + 1) # 1-indexed
+
+    # Initialize all distances to infinity
+    distances = [9223372036854775807] * (num_nodes + 1)  # 1-indexed => total distance from the source node, to the node at the index
+
+    # Initialize all energy costs to infinity
+    costs = [9223372036854775807] * (num_nodes + 1)
+
+    # Initialize the priority queue
+    priority_queue = Heap()
+
+    # Push the source node into the heap, mark distance and cost as 0, and mark it as visited -> O(1)
+    s = int(source)
+    priority_queue.insert(s, 0)
+    distances[s] = 0
+    costs[s] = 0
+    visited[s] = True
+    parent[s] = s
+
+    # While the priority queue still has any elements, dequeue the element at the front of the queue (least path cost
+    # Enqueue this element's children after marking them as visited, if not visited yet
+    while not priority_queue.is_empty():
+        # Dequeue the frontmost element from the queue
+        current_node = priority_queue.remove()
+        # print("Current Node:", current_node, "-", str(distances[current_node]))
+
+        # Stop if we have reached the Target Node
+        if (current_node == int(target)):
+            break
+
+        # Go through all children nodes of the dequeued node, using Coord.json
+        # child comes as a string since it is taken from G.json directly (raw)
+        for child in g[str(current_node)]:
+            int_child = int(child)
+            
+            # Calculate the total distance to the child from the parent node (current distance + distance to this child from parent)
+            distance_to_child = distances[current_node] + dist[str(current_node) + "," + child]
+            # Calculate the total energy cost to the child, so we can ensure that the update follows the constraint
+            cost_to_child = costs[current_node] + cost[str(current_node) + "," + child]
+
+            # If the new total distance to the child is smaller or the child has not been visited before, we will update the distances array and the parent of this child
+            if (
+                cost_to_child < energy_budget and 
+                ((distance_to_child < distances[int_child]) or (visited[int_child] == False))
+            ):
+                priority_queue.insert(int_child, distance_to_child) # Insert this child into the priority_queue
+                visited[int_child] = True                           # Mark this child as visited
+                distances[int_child] = distance_to_child            # Save the new distance from the source to this child 
+                costs[int_child] = cost_to_child                    # Save the new cost from the source to this child 
+                parent[int_child] = current_node                    # Set the parent of this child as the current_node variable being explored                
+
+    # We are out of the while loop => All shortest distances have been calculated from the source to target node
+    # We need to reconstruct the path and print it out, along with the shortest distance from source to target
+    # We will start from the target node, and work backwards using the parent array
+    #* O(n)
+    path = []
+    start = int(target)
+    while(start != s):
+        path.append(start)
+        start = parent[start]
+    path.append(start)
+
+    # print("Number of nodes in shortest path (including source and target):", len(path))
+    print("Shortest path: ", end="")
+    for node in reversed(path):
+        if (node != int(target)):
+            print(str(node), end="->")
+        else:
+            print(node)
+    print("Shortest distance:", distances[int(target)])
+    print("Total energy cost:", costs[int(target)])
 
 
 def task_three():
@@ -105,13 +216,16 @@ def task_three():
     
     A heuristic function will be included and implemented.
     """
-    # past distance + distance from current node to destination node
-    # manhattan distance  -> x2 - x1 + y2 - y1
-    # coordinate distance -> look into this, see which one is better to use
-    # Try 2 heuristic functions
-    # 1. past distance (dijkstra) + distance from current node to destination node (using coordinate distances)
-    # 2. past distance (dijkstra) + distance from current node to destination node (using manhattan distances)
-    # Compare the functions (deeper analysis)
+
+    '''
+    Past Distance + Distance from current node to destination node
+    Manhattan Distance  => x2 - x1 + y2 - y1
+    Coordinate Distance => Pythagoras' Theorem (look into this, see which one is better to use)
+    Try 2 heuristic functions:
+        1. Past distance (dijkstra) + distance from current node to destination node (using Coordinate Distances)
+        2. Past distance (dijkstra) + distance from current node to destination node (using Manhattan Distances)
+        Then, compare the functions (for deeper analysis)
+    '''
 
     print("Task 3")
 
@@ -131,9 +245,13 @@ def main():
     coord = json.load(open("Lab1\coord.json"))
     dist = json.load(open("Lab1\dist.json"))
     g = json.load(open("Lab1\g.json"))
+    cost = json.load(open("Lab1\cost.json"))
+    start_node: str = "1"
+    end_node: str = "50"
+    energy_budget: int = 287932
 
-    task_one("1", "50", coord, dist, g)
-    # task_two()
+    task_one(start_node, end_node, coord, dist, g, cost)
+    task_two(start_node, end_node, coord, dist, g, cost, energy_budget)
     # task_three()
 
 

@@ -1,11 +1,11 @@
-# Question two of this assignment will be solved using the UCS algorithm.
+# Question three of this assignment will be solved using the UCS algorithm.
 
 import queue
 
 
-class question_two:
+class question_three:
     def __init__(self, coord, cost, dist, g):
-        print("======================== QUESTION 2 ========================\n")
+        print("======================== QUESTION 3 ========================\n")
         self.priority_queue = queue.PriorityQueue()
         self.coord = coord
         self.cost = cost
@@ -39,9 +39,18 @@ class question_two:
             route += "->" + path.pop()
         return route
 
-    # Uniform-Cost-Search (UCS) with Priority Queue
-    def uniform_cost_search(self, start, goal, budget):
-        ''' Function to perform UCS to find path in a graph
+    # Heuristic function for Distance (Pythagoras)
+
+    def heuristic(self, nodeA, nodeB):
+        (xA, yA) = self.coord[nodeA]
+        (xB, yB) = self.coord[nodeB]
+        distance = ((xA - xB)**2 + (yA - yB)**2)**0.5
+        return distance
+
+    # A*-Search (A*S) with Priority Queue
+
+    def astar_search(self, start, goal, budget):
+        ''' Function to perform astar search to find path in a graph
             Input  : Graph with the start and goal vertices
             Output : Dict of explored vertices in the graph
         '''
@@ -59,7 +68,7 @@ class question_two:
         # Priority Queue for Frontier
         frontier = self.priority_queue
         # Add the start node to frontier
-        frontier.put((0, (0, start)))
+        frontier.put((0, 0, (0, start)))
 
         # Dict to reduce run time and memory usage for iteration
         min_energy = {}
@@ -67,7 +76,7 @@ class question_two:
 
         while not frontier.empty():
             # Get next node from frontier
-            distance, (energy_cost, currentNode) = frontier.get()
+            priority, distance, (energy_cost, currentNode) = frontier.get()
             currentNode = str(currentNode)
 
             # Stop when goal is reached
@@ -102,11 +111,11 @@ class question_two:
                 # consider if not yet explored or if the new distance is lower
                 if ((storage not in explored) or (newDistance <= path_distance[nextNode])) and (newCost <= budget):
 
-                    # set priority as newDistance
-                    priority = newDistance
+                    # set priority as newcost + distance from goal
+                    priority = newDistance + self.heuristic(nextNode, goal)
 
                     # put new node in frontier with priority
-                    frontier.put((priority, storage))
+                    frontier.put((priority, newDistance, storage))
 
                     # assign current node as parent
                     explored[storage] = (energy_cost, currentNode)

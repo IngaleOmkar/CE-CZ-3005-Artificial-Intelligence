@@ -57,15 +57,18 @@ class question_three:
                 path_cost = cost[current] + self.travel_cost[str(current) + "," + str(vertex)]
 
                 # Distance travelled + projected distance to target
-                a = (distance[current] + self.dist[str(current) + "," + str(vertex)])
+                vertex_distance = (distance[current] + self.dist[str(current) + "," + str(vertex)])
+                projected_distance = 0
 
                 if(heuristic_function == "coordinate"):
-                    a += function.coordinate_distance(self.coord[str(vertex)], self.coord[str(target)])
+                    projected_distance = function.coordinate_distance(self.coord[str(vertex)], self.coord[str(target)])
                 elif(heuristic_function == "manhattan"):
-                    a += function.manhattan_distance(self.coord[str(vertex)], self.coord[str(target)])
+                    projected_distance = function.manhattan_distance(self.coord[str(vertex)], self.coord[str(target)])
                 else:
-                    a += function.chebyshev_distance(self.coord[str(vertex)], self.coord[str(target)])
+                    projected_distance = function.chebyshev_distance(self.coord[str(vertex)], self.coord[str(target)])
                 
+                # THe actual a* function
+                a = projected_distance + vertex_distance
 
                 if((not visited[vertex] or optimization_values[vertex] > a) and path_cost <= budget):
 

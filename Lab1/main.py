@@ -267,6 +267,9 @@ def task_three(source: str, target: str, coord, dist, g, cost, energy_budget: in
     # Initialize all distances to infinity
     distances = [9223372036854775807] * (num_nodes + 1)  # 1-indexed => total distance from the source node, to the node at the index
 
+    # Initialize the array of saved heuristic distances
+    f_ns = [9223372036854775807] * (num_nodes + 1)
+
     # Initialize all energy costs to infinity
     costs = [9223372036854775807] * (num_nodes + 1)
 
@@ -278,8 +281,15 @@ def task_three(source: str, target: str, coord, dist, g, cost, energy_budget: in
 
     # Push the source node into the heap, mark distance and cost as 0, and mark it as visited -> O(1)
     s = int(source)
-    priority_queue.insert(s, 0)
+
+    # Calculate the heuristic distance of the source node to be inserted
+    source_coord = coord[source]
+    source_f_n = ((target_coord[0] - source_coord[0])**2 + (target_coord[1] - source_coord[1])**2)**0.5 # Pythagoras' Theorem
+
+    # Insert the source node, and source node details
+    priority_queue.insert(s, source_f_n)
     distances[s] = 0
+    f_ns[s] = source_f_n
     costs[s] = 0
     visited[s] = True
     parent[s] = s
@@ -314,15 +324,16 @@ def task_three(source: str, target: str, coord, dist, g, cost, energy_budget: in
             # Calculate the total energy cost to the child => g(n)
             cost_to_child = costs[current_node] + cost[str(current_node) + "," + child]
 
-            # If the new total distance to the child is smaller or the child has not been visited before, we will update the distances array and the parent of this child
+            # If the new estimated total distance to the child is smaller or the child has not been visited before, we will update this child's information
             if (
                 cost_to_child < energy_budget and 
-                ((distance_to_child < distances[int_child]) or (visited[int_child] == False))
+                ((f_n < f_ns[int_child]) or (visited[int_child] == False))
             ):
                 # The former is the final result, and the latter is the value used to rank nodes
                 priority_queue.insert(int_child, f_n)    # Insert this child into the priority_queue, but use the heuristic distance to prioritize the nodes
                 visited[int_child] = True                # Mark this child as visited
                 distances[int_child] = distance_to_child # Save the new (actual, non-heuristic) distance from the source to this child 
+                f_ns[int_child] = f_n                    # Save the heuristic distance for the child
                 costs[int_child] = cost_to_child         # Save the cost of travelling to the child
                 parent[int_child] = current_node         # Set the parent of this child as the current_node variable being explored                
 

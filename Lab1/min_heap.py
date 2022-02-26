@@ -1,6 +1,6 @@
 
 
-class Heap:
+class MinHeap:
     """
     A class used to implement a min binary heap.
 
@@ -26,7 +26,7 @@ class Heap:
     def __init__(self) -> None:
         self.heap = []
     
-    def insert(self, val: int, dist: int) -> None:
+    def insert(self, val: int, dist: int, cost: int, f_n: int) -> None:
         """Inserts a value into the heap. 
 
         The function will use a helper function: __bubble_up to do in-place sorting for the inserted element.
@@ -38,9 +38,15 @@ class Heap:
 
         dist : int
             The current distance from the source to this inserted vertex (labelled by val).
+
+        cost: int
+            The current cost from the source to this inserted vertex.
+
+        f_n: int
+            Current heuristic distance for this inserted vertex. 0 if unused or target node.
         """
 
-        self.heap.append([val, dist])
+        self.heap.append([val, dist, cost, f_n])
         self.__bubble_up(len(self.heap) - 1)
     
     def remove(self) -> int:
@@ -63,7 +69,7 @@ class Heap:
         self.heap.pop()
         self.__bubble_down(0)
 
-        return node[0]
+        return node[0], node[1], node[2], node[3]
     
     def peek(self) -> int:
         """Returns the root node (source) of the heap, if the heap has at least 1 element.

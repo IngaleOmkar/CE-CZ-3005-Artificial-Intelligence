@@ -73,8 +73,13 @@ class question_three:
         # Dict to reduce run time and memory usage for iteration
         min_energy = {}
         min_distance = {}
+        
+        # Number of processed nodes
+        counts = 0
 
         while not frontier.empty():
+            counts += 1
+
             # Get next node from frontier
             priority, distance, (energy_cost, currentNode) = frontier.get()
             currentNode = str(currentNode)
@@ -83,7 +88,7 @@ class question_three:
             if currentNode == str(goal):
                 route = self.reconstruct_path(
                     explored, energy_cost, currentNode)
-                return distance, energy_cost, route
+                return distance, energy_cost, route, counts
 
             ################# Efficiency in skipping ########################
             if (currentNode in min_distance) and (currentNode in min_energy):

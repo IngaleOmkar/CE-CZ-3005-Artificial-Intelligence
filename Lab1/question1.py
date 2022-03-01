@@ -54,7 +54,12 @@ class question_one:
         # Add the start node to frontier
         frontier.put((0, start))
         
+        # Number of processed nodes
+        counts = 0
+
         while not frontier.empty():
+            counts += 1
+
             # Get next node from frontier
             distance, currentNode = frontier.get()
             currentNode = str(currentNode)
@@ -62,7 +67,7 @@ class question_one:
             # Stop when goal is reached
             if currentNode == str(goal):
                 route = self.reconstruct_path(explored, start, goal)
-                return distance, route
+                return distance, route, counts
 
             # Explore every single neighbor of current node
             for nextNode in self.g[currentNode]:

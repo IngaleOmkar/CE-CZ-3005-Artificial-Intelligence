@@ -11,5 +11,3 @@ class heuristics:
     
     def chebyshev_distance(self, coord1, coord2):
         return max(abs(coord1[0] - coord2[0]), abs(coord1[1] - coord2[1]))
-
-    

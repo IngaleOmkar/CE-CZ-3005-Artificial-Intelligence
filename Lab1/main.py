@@ -35,9 +35,15 @@ print("\nShortest Distance:", distance)
 print("\nCost:", energy)
 print("\nNodes Explored:", counts)
 
-q3 = question_three(coord, cost, dist, g)
-distance, energy, route, counts = q3.astar_search(1, 50, 287932)
-print("Shortest Path:", route)
-print("\nShortest Distance:", distance)
-print("\nCost:", energy)
-print("\nNodes Explored:", counts)
+
+
+heuristicTypes = ['Coordinate', 'chebyshev', 'Manhattan']
+# 3 different heuristic
+for type in heuristicTypes:
+    q3 = question_three(coord, cost, dist, g, type)
+    distance, energy, route, counts = q3.astar_search(1, 50, 287932)
+    print("Heuristic Approach: ", type)
+    print("\nShortest Path:", route)
+    print("\nShortest Distance:", distance)
+    print("\nCost:", energy)
+    print("\nNodes Explored:", counts)

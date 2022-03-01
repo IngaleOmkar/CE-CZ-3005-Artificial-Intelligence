@@ -4,13 +4,14 @@ import queue
 
 
 class question_three:
-    def __init__(self, coord, cost, dist, g):
+    def __init__(self, coord, cost, dist, g, type):
         print("======================== QUESTION 3 ========================\n")
         self.priority_queue = queue.PriorityQueue()
         self.coord = coord
         self.cost = cost
         self.dist = dist
         self.g = g
+        self.type = type
 
     # Reconstruct the path from the Dict of explored nodes {node : parentNode}
     # Intuition : Backtrack from the goal node by checking successive parents
@@ -44,8 +45,15 @@ class question_three:
     def heuristic(self, nodeA, nodeB):
         (xA, yA) = self.coord[nodeA]
         (xB, yB) = self.coord[nodeB]
-        distance = ((xA - xB)**2 + (yA - yB)**2)**0.5
-        return distance
+        type = self.type
+
+        if(type == 'Coordinate'):
+            return ((xA - xB)**2 + (yA - yB)**2)**0.5
+        elif(type == 'Manhattan'):
+            return (abs(xA - xB) + abs(yA - yB))
+        elif(type == 'chebyshev'):
+            return min(abs(xA - xB), abs(yA - yB))
+        return None
 
     # A*-Search (A*S) with Priority Queue
 
@@ -73,7 +81,7 @@ class question_three:
         # Dict to reduce run time and memory usage for iteration
         min_energy = {}
         min_distance = {}
-        
+
         # Number of processed nodes
         counts = 0
 

@@ -1,98 +1,136 @@
-# Question one of this assignment will be solved using the UCS algorithm.
-
 import queue
 
 
 class question_two:
+    """Task two solves the NYC instance, with an energy constraint imposed.
+    
+    This class exists to search for the shortest distance between a start and goal node in a given graph, given a constraint in place.
+    
+    For this task, the pure version of Uniform-Cost Search (UCS) algorithm is used, without any custom optimization.
+    """
     def __init__(self, coord, cost, dist, g):
-        print("======================== QUESTION 2 Orignal ========================\n")
+        """Constructor that initializes the essential variables for instances of the question_two class.
+
+        Args:
+            coord (dict of str: list of int): JSON file containing every vertex and its corresponding x and y coordinates.
+            cost (dict of str: int): JSON file containing the energy cost between two nodes.
+            dist (dict of str: int): JSON file containing the distance between two nodes.
+            g (dict of str: list of str): JSON file containing every vertex, and the node(s) the vertex is connected to if any.
+        """
+        print("======================== QUESTION 2 (Original) ========================\n")
         self.priority_queue = queue.PriorityQueue()
         self.coord = coord
         self.cost = cost
         self.dist = dist
         self.g = g
 
-    # Reconstruct the path from the Dict of explored nodes {node : parentNode}
-    # Intuition : Backtrack from the goal node by checking successive parents
-
     def reconstruct_path(self, explored, start, goal):
-        start = str(start)             # Convert to string to match data type
-        goal = str(goal)               # Convert to string to match data type
-        currentNode = goal             # start at the goal node
-        path = []                      # initiate the blank path
+        """Reconstructs the path from a given dictionary of explored nodes.
 
-        # stop when backtrack reaches start node
+        This is done by backtracking from the goal node by checking its successive parents, up till the start node is reached.
+
+        Args:
+            explored (dict of str: int): Dictionary of explored nodes, to reconstruct a path from.
+            start (str): Starting node to begin path at, in the dictionary of explored nodes.
+            goal (str): Target node where the path stops, in the dictionary of explored nodes.
+
+        Returns:
+            route (str): Path from the start node to goal node, with nodes separated by "->".
+        """
+        start = str(start)  # Convert to string to match data type
+        goal = str(goal)    # Convert to string to match data type
+        currentNode = goal  # Start at the goal node
+        path = []           # Initialize the path array
+
+        # Stop when backtracking reaches the start node
         while currentNode != start:
-            # grow the path backwards and backtrack
+            # Append the node into the path, and then look for its parent in the explored dictionary
             path.append(currentNode)
             currentNode = explored[currentNode]
 
-        path.append(start)             # append start node for completeness
+        path.append(start) # The start node must also be added in after the loop, to complete the path
 
-        # reverse the path and get the formated route
+        # Reverse the path, and format the route as a prettified string
         route = path.pop()
         while len(path):
             route += "->" + path.pop()
         return route
 
-    # Uniform-Cost-Search (UCS) with Priority Queue
     def uniform_cost_search(self, start, goal, budget):
-        ''' Function to perform UCS to find path in a graph
-            Input  : Graph with the start and goal vertices
-            Output : Dict of explored vertices in the graph
-        '''
+        """Performs the Uniform-Cost Search (UCS) algorithm to find the shortest path between two nodes in a given graph.
 
-        # initialization
+        This implementation is for Task Two, and considers an energy cost constraint when looking for the shortest distance.
+
+        Note: Python's default queue module is employed here, to facilitate the Priority Queue where nodes with distance as the priority.
+
+        Args:
+            start (int): Starting node within the graph.
+            goal (int): Target node we want to reach within the shortest distance.
+            budget (int): Maximum energy cost that any path is allowed to incur, before the path cannot be considered as a solution.
+
+        Returns:
+            distance (int): Shortest distance found between the start and goal nodes given, using the algorithm.
+            energy_cost (int): Total energy cost for the path yielding the shortest distance found.
+                This energy cost must fall below the budget argument given.
+            route (str): Path from the start node to goal node, with nodes separated by "->".
+            counts (int): Number of nodes visited in total during the algorithm's runtime.
+        """
+
+        # Initialize start and goal nodes by casting to string
         start = str(start)
         goal = str(goal)
 
-        # Dict of explored nodes {node : parentNode}, start node has no parent node
+        # Initialize the dictionary of explored nodes {(cost, node) : parentNode}. The start node has no parent node
         explored = {(0, start): None}
-        # Dict of distance cost from start to node, start cost is zero
+
+        # Initialize the dictionary of distance to a node from the start node. There is zero cost involved for the start node
         path_distance = {start: 0}
-        # Dict of energy cost
+
+        # Initialize the dictionary of energy costs incurred to get to a particular node. The start node has zero energy cost involved
         path_energy = {start: 0}
-        # Priority Queue for Frontier
+
+        # Initialize the priority queue using Python's queue module
         frontier = self.priority_queue
-        # Add the start node to frontier
+
+        # Enqueue the starting node with highest priority (0 cost)
         frontier.put((0, (0, start)))
         
-        # Number of processed nodes
+        # Initialize count variable to track the total number of processed nodes
         counts = 0
 
         while not frontier.empty():
-            counts += 1
+            counts += 1 # A new node is being processed
 
-            # Get next node from frontier
+            # Get the next node with highest priority from the priority queue
             distance, (energy_cost, currentNode) = frontier.get()
             currentNode = str(currentNode)
 
-            # Stop when goal is reached
+            # If the goal node is reached, we will end the algorithm and reconstruct the path from start to goal nodes, and return the relevant values
             if currentNode == str(goal):
                 route = self.reconstruct_path(explored, start, goal)
                 return distance, energy_cost, route, counts
 
-            # Explore every single neighbor of current node
+            # For the current node, check each of its adjacent nodes using the dictionary g
             for nextNode in self.g[currentNode]:
                 nextNode = str(nextNode)
 
-                # compute the new cost for the node based on the current node
+                # Compute the new distance and energy cost for this adjacent node, based on the current node
                 newDistance = distance + self.dist[currentNode + "," + nextNode]
                 newCost = energy_cost + self.cost[currentNode + "," + nextNode]
 
-                # consider if not yet explored or if the new distance is lower
+                # Enqueue this adjacent node if the new distance to it is lower, or is has never been explored. 
+                # The total cost must be lower than the budget given.
                 if ((nextNode not in explored) or (newDistance <= path_distance[nextNode])) and (newCost <= budget):
-
-                    # set priority as newDistance
+                    # Priorities of nodes are based on the cumulative distances to them
                     priority = newDistance
 
-                    # put new node in frontier with priority
+                    # Put this adjacent node into the priority queue
                     frontier.put((priority, (newCost, nextNode)))
 
-                    # assign current node as parent
+                    # Assign current node as parent to this adjacent node
                     explored[nextNode] = currentNode
 
-                    # keep track of the updated path cost
+                    # Keep track of the updated path distance and cost to this adjacent node
                     path_distance[nextNode] = newDistance
                     path_energy[nextNode] = newCost
 
